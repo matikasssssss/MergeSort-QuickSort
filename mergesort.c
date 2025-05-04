@@ -174,13 +174,15 @@ void mezclar_runs(char **nombres_runs, size_t num_runs, size_t a, int nivel)
         nuevos_nombres[i] = strdup(nombre_out);
 
         mezclar_archivos(&nombres_runs[inicio], fin - inicio, nombre_out);
+
+        for (size_t j = inicio; j < fin; j++)
+        {
+            remove(nombres_runs[j]);
+            free(nombres_runs[j]);
+        }
     }
 
-    for (size_t i = 0; i < num_runs; i++)
-    {
-        remove(nombres_runs[i]);
-        free(nombres_runs[i]);
-    }
+    free(nombres_runs);
 
     mezclar_runs(nuevos_nombres, nuevos_runs, a, nivel + 1);
 
@@ -212,6 +214,4 @@ void mergesort_externo(const char *nombre_archivo, size_t M, size_t a)
     fclose(entrada);
 
     mezclar_runs(nombres_runs, num_runs, a, 0);
-
-    free(nombres_runs);
 }
