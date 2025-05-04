@@ -5,8 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define ELEMENT_SIZE sizeof(int64_t)
-#define ELEMENTS_PER_BLOCK (BLOCK_SIZE / ELEMENT_SIZE)
 
 void intercambiar_elementos(int64_t *arr, size_t i, size_t j)
 {
@@ -88,6 +86,19 @@ void mezclar_archivos(char **input_names, size_t count, const char *output_name)
 
         leer_bloque(entradas[i].f, entradas[i].buffer, entradas[i].bloque_actual++);
         entradas[i].elementos_validos = ELEMENTS_PER_BLOCK;
+void mezclar_archivos(char **input_names, size_t count, const char *output_name)
+{
+    FILE **inputs = malloc(sizeof(FILE *) * count);
+    int64_t *buffer = malloc(sizeof(int64_t) * count);
+    int activo[count];
+    size_t pos[count];
+
+    for (size_t i = 0; i < count; i++)
+    {
+        inputs[i] = fopen(input_names[i], "rb");
+        fread(&buffer[i], sizeof(int64_t), 1, inputs[i]);
+        activo[i] = 1;
+        pos[i] = 1;
     }
 
     FILE *out = fopen(output_name, "wb");
@@ -103,6 +114,11 @@ void mezclar_archivos(char **input_names, size_t count, const char *output_name)
             if (entradas[i].activo && entradas[i].pos < entradas[i].elementos_validos)
             {
                 if (min_idx == -1 || entradas[i].buffer[entradas[i].pos] < entradas[min_idx].buffer[entradas[min_idx].pos])
+        for (size_t i = 0; i < count; i++)
+        {
+            if (activo[i])
+            {
+                if (min_idx == -1 || buffer[i] < buffer[min_idx])
                 {
                     min_idx = i;
                 }
@@ -142,6 +158,9 @@ void mezclar_archivos(char **input_names, size_t count, const char *output_name)
             out_buffer[i] = 0;
         }
         escribir_bloque(out, out_buffer, ftell(out) / BLOCK_SIZE);
+    for (size_t i = 0; i < count; i++)
+    {
+        fclose(inputs[i]);
     }
 
     for (size_t i = 0; i < count; i++)
