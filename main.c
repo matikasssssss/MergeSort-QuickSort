@@ -1,55 +1,49 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
+#include <stdint.h>
+#include "utils.h"
+#include "mergesort.h"
 #include "diskio.h"
 
-void mergesort_externo(const char *archivo_entrada, const char *archivo_salida, size_t n);
-void quicksort_externo(const char *archivo_entrada, const char *archivo_salida, size_t n);
-void generar_datos_binarios(const char *archivo, size_t n);
-
-double medir_tiempo(void (*func)(const char *, const char *, size_t),
-                    const char *in, const char *out, size_t n,
-                    size_t *lecturas, size_t *escrituras)
-{
-    cont_lecturas = 0;
-    cont_escrituras = 0;
-
-    clock_t inicio = clock();
-    func(in, out, n);
-    clock_t fin = clock();
-
-    *lecturas = cont_lecturas;
-    *escrituras = cont_escrituras;
-
-    return (double)(fin - inicio) / CLOCKS_PER_SEC;
-}
+#define NUM_ELEMENTOS 10000
+#define M BLOCK_SIZE
+#define A 4 // Prueba con un a fijo
 
 int main()
 {
-    size_t tamanos[] = {4, 8, 16, 32, 60};
-    size_t n;
-    char nombre_in[64], nombre_out[64];
+    generar_datos_binarios("entrada.bin", NUM_ELEMENTOS);
 
-    for (int i = 0; i < 5; i++)
+    mergesort_externo("entrada.bin", M, A);
+
+    FILE *f = fopen("entrada_tmp.bin", "rb");
+    if (!f)
     {
-        n = tamanos[i] * 1000000ULL;
-
-        snprintf(nombre_in, sizeof(nombre_in), "input_%luM.bin", tamanos[i]);
-        snprintf(nombre_out, sizeof(nombre_out), "mergeout_%luM.bin", tamanos[i]);
-
-        printf("Generando archivo de entrada %s...\n", nombre_in);
-        generar_datos_binarios(nombre_in, n);
-
-        printf("Corriendo Mergesort externo...\n");
-        size_t r, w;
-        double t = medir_tiempo(mergesort_externo, nombre_in, nombre_out, n, &r, &w);
-        printf("Tiempo: %.2fs, Lecturas: %lu, Escrituras: %lu\n", t, r, w);
-
-        snprintf(nombre_out, sizeof(nombre_out), "quickout_%luM.bin", tamanos[i]);
-        printf("Corriendo Quicksort externo...\n");
-        t = medir_tiempo(quicksort_externo, nombre_in, nombre_out, n, &r, &w);
-        printf("Tiempo: %.2fs, Lecturas: %lu, Escrituras: %lu\n", t, r, w);
+        perror("fopen");
+        return 1;
     }
 
+    int64_t anterior, actual;
+    if (fread(&anterior, sizeof(int64_t), 1, f) != 1)
+    {
+        printf("Archivo vacío o error de lectura.\n");
+        fclose(f);
+        return 1;
+    }
+
+    size_t pos = 1;
+    while (fread(&actual, sizeof(int64_t), 1, f) == 1)
+    {
+        if (actual < anterior)
+        {
+            printf("ERROR: Datos no ordenados en la posición %zu: %ld > %ld\n", pos, anterior, actual);
+            fclose(f);
+            return 1;
+        }
+        anterior = actual;
+        pos++;
+    }
+
+    fclose(f);
+    printf("¡Archivo ordenado correctamente!\n");
     return 0;
 }
