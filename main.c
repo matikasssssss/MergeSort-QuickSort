@@ -1,23 +1,55 @@
+#include "mergesort.h"
+#include "utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include "utils.h"
-#include "mergesort.h"
-#include "diskio.h"
+
+int verificar_orden(const char *archivo)
+{
+    printf("Verificando orden del archivo: %s\n", archivo);
+    FILE *f = fopen(archivo, "rb");
+    if (!f)
+    {
+        perror("fopen");
+        return 0;
+    }
+
+    int64_t anterior, actual;
+    if (fread(&anterior, sizeof(int64_t), 1, f) != 1)
+    {
+        fclose(f);
+        return 1; // Archivo vacío o con un solo elemento
+    }
+
+    while (fread(&actual, sizeof(int64_t), 1, f) == 1)
+    {
+        if (actual < anterior)
+        {
+            fclose(f);
+            return 0; // No está ordenado
+        }
+        anterior = actual;
+    }
+
+    fclose(f);
+    return 1; // Orden correcto
+}
 
 int main()
 {
-    size_t cantidad = 1000; // Por ejemplo, 10 mil elementos
-    generar_datos_binarios("entrada.bin", cantidad);
+    generar_datos_binarios("entrada.bin", 10000000); // Genera datos aleatorios
+    mergesort_externo("entrada.bin", 1024, 4);       // Ejecuta el mergesort
 
-    cont_lecturas = 0;
-    cont_escrituras = 0;
+    printf("Mergesort finalizado.\n");
 
-    // Ejecutar el mergesort externo
-    mergesort_externo("entrada.bin", BLOCK_SIZE, 8); // Por ejemplo, a = 8
-
-    printf("Lecturas: %zu\n", cont_lecturas);
-    printf("Escrituras: %zu\n", cont_escrituras);
+    if (verificar_orden("entrada_tmp.bin"))
+    {
+        printf("Mergesort finalizado correctamente. El archivo está ordenado.\n");
+    }
+    else
+    {
+        printf("Error: El archivo no está ordenado.\n");
+    }
 
     return 0;
 }

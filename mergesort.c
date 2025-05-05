@@ -83,8 +83,10 @@ void mezclar_archivos(char **input_names, size_t count, const char *output_name)
         entradas[i].bloque_actual = 0;
         entradas[i].activo = 1;
 
-        leer_bloque(entradas[i].f, entradas[i].buffer, entradas[i].bloque_actual++);
-        entradas[i].elementos_validos = ELEMENTS_PER_BLOCK;
+        size_t leidos = fread(entradas[i].buffer, sizeof(int64_t), tam_bloque, entradas[i].f);
+        entradas[i].elementos_validos = leidos;
+        if (leidos == 0)
+            entradas[i].activo = 0;
     }
 
     FILE *out = fopen(output_name, "wb");
@@ -119,7 +121,7 @@ void mezclar_archivos(char **input_names, size_t count, const char *output_name)
 
         if (entradas[min_idx].pos == entradas[min_idx].elementos_validos)
         {
-            size_t leidos = fread(entradas[min_idx].buffer, sizeof(int64_t), ELEMENTS_PER_BLOCK, entradas[min_idx].f);
+            size_t leidos = fread(entradas[min_idx].buffer, sizeof(int64_t), tam_bloque, entradas[min_idx].f);
             if (leidos == 0)
             {
                 entradas[min_idx].activo = 0;
@@ -173,6 +175,7 @@ void mezclar_runs(char **nombres_runs, size_t num_runs, size_t a, int nivel)
         snprintf(nombre_out, 32, "run_nivel%d_%zu.bin", nivel, i);
         nuevos_nombres[i] = strdup(nombre_out);
 
+        printf("Nivel %d: mezclando archivos del %zu al %zu\n", nivel, inicio, fin);
         mezclar_archivos(&nombres_runs[inicio], fin - inicio, nombre_out);
 
         for (size_t j = inicio; j < fin; j++)
