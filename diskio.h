@@ -8,8 +8,8 @@
 #define ELEMENT_SIZE sizeof(int64_t)
 #define ELEMENTS_PER_BLOCK (BLOCK_SIZE / ELEMENT_SIZE)
 
-void leer_bloque(FILE *f, int64_t *buffer, size_t bloque);
-void escribir_bloque(FILE *f, int64_t *buffer, size_t bloque);
+void leer_bloque(FILE *f, int64_t *buffer, size_t bloque, size_t cantidad_elementos);
+void escribir_bloque(FILE *f, int64_t *buffer, size_t bloque, size_t cantidad_elementos);
 
 extern size_t cont_lecturas;
 extern size_t cont_escrituras;
