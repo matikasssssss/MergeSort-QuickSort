@@ -38,7 +38,10 @@ size_t crear_runs_iniciales(FILE *entrada, size_t elementos_totales, size_t a, c
         for (size_t j = 0; j < bloques_a_leer; j++)
         {
             size_t offset = j * ELEMENTS_PER_BLOCK;
-            leer_bloque(entrada, buffer + offset, bloque_inicio + j);
+            size_t restantes = elementos_a_leer - offset;
+            size_t cantidad = restantes >= ELEMENTS_PER_BLOCK ? ELEMENTS_PER_BLOCK : restantes;
+
+            leer_bloque(entrada, buffer + offset, bloque_inicio + j, cantidad);
         }
 
         qsort(buffer, elementos_a_leer, sizeof(int64_t), comparar_int64);
@@ -51,7 +54,10 @@ size_t crear_runs_iniciales(FILE *entrada, size_t elementos_totales, size_t a, c
         for (size_t j = 0; j < bloques_a_leer; j++)
         {
             size_t offset = j * ELEMENTS_PER_BLOCK;
-            escribir_bloque(f_run, buffer + offset, j);
+            size_t restantes = elementos_a_leer - offset;
+            size_t cantidad = restantes >= ELEMENTS_PER_BLOCK ? ELEMENTS_PER_BLOCK : restantes;
+
+            escribir_bloque(f_run, buffer + offset, j, cantidad);
         }
         fclose(f_run);
     }
@@ -59,6 +65,8 @@ size_t crear_runs_iniciales(FILE *entrada, size_t elementos_totales, size_t a, c
     free(buffer);
     return num_runs;
 }
+
+
 
 typedef struct
 {
@@ -83,8 +91,7 @@ void mezclar_archivos(char **input_names, size_t count, const char *output_name)
         entradas[i].bloque_actual = 0;
         entradas[i].activo = 1;
 
-        leer_bloque(entradas[i].f, entradas[i].buffer, entradas[i].bloque_actual++);
-        entradas[i].elementos_validos = ELEMENTS_PER_BLOCK;
+        entradas[i].elementos_validos = fread(entradas[i].buffer, sizeof(int64_t), tam_bloque, entradas[i].f);
     }
 
     FILE *out = fopen(output_name, "wb");
@@ -113,32 +120,25 @@ void mezclar_archivos(char **input_names, size_t count, const char *output_name)
 
         if (out_pos == tam_bloque)
         {
-            escribir_bloque(out, out_buffer, ftell(out) / BLOCK_SIZE);
+            fwrite(out_buffer, sizeof(int64_t), out_pos, out);
             out_pos = 0;
         }
 
         if (entradas[min_idx].pos == entradas[min_idx].elementos_validos)
         {
-            size_t leidos = fread(entradas[min_idx].buffer, sizeof(int64_t), ELEMENTS_PER_BLOCK, entradas[min_idx].f);
-            if (leidos == 0)
+            entradas[min_idx].elementos_validos = fread(entradas[min_idx].buffer, sizeof(int64_t), tam_bloque, entradas[min_idx].f);
+            entradas[min_idx].pos = 0;
+
+            if (entradas[min_idx].elementos_validos == 0)
             {
                 entradas[min_idx].activo = 0;
-            }
-            else
-            {
-                entradas[min_idx].elementos_validos = leidos;
-                entradas[min_idx].pos = 0;
             }
         }
     }
 
     if (out_pos > 0)
     {
-        for (size_t i = out_pos; i < tam_bloque; i++)
-        {
-            out_buffer[i] = 0;
-        }
-        escribir_bloque(out, out_buffer, ftell(out) / BLOCK_SIZE);
+        fwrite(out_buffer, sizeof(int64_t), out_pos, out);
     }
 
     for (size_t i = 0; i < count; i++)
@@ -147,9 +147,13 @@ void mezclar_archivos(char **input_names, size_t count, const char *output_name)
         free(entradas[i].buffer);
     }
     fclose(out);
-    free(entradas);
     free(out_buffer);
+    free(entradas);
 }
+
+
+
+
 
 void mezclar_runs(char **nombres_runs, size_t num_runs, size_t a, int nivel)
 {
@@ -192,6 +196,7 @@ void mezclar_runs(char **nombres_runs, size_t num_runs, size_t a, int nivel)
     }
     free(nuevos_nombres);
 }
+
 
 void mergesort_externo(const char *nombre_archivo, size_t M, size_t a)
 {
