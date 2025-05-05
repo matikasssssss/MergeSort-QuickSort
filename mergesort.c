@@ -25,6 +25,8 @@ size_t crear_runs_iniciales(FILE *entrada, size_t elementos_totales, size_t a, c
     size_t num_runs = (elementos_totales + elementos_por_run - 1) / elementos_por_run;
 
     int64_t *buffer = malloc(elementos_por_run * sizeof(int64_t));
+    
+    
 
     for (size_t i = 0; i < num_runs; i++)
     {
@@ -71,6 +73,7 @@ size_t crear_runs_iniciales(FILE *entrada, size_t elementos_totales, size_t a, c
 typedef struct
 {
     FILE *f;
+    int64_t elementos_restantes;
     int64_t *buffer;
     size_t pos;
     size_t elementos_validos;
@@ -83,21 +86,42 @@ void mezclar_archivos(char **input_names, size_t count, const char *output_name)
     RunEntrada *entradas = malloc(sizeof(RunEntrada) * count);
     size_t tam_bloque = ELEMENTS_PER_BLOCK;
 
+    // Inicializar las entradas
     for (size_t i = 0; i < count; i++)
     {
         entradas[i].f = fopen(input_names[i], "rb");
+        fseek(entradas[i].f, 0, SEEK_END);
+        size_t tam_archivo = ftell(entradas[i].f);
+        rewind(entradas[i].f);
+
+        entradas[i].elementos_restantes = tam_archivo / sizeof(int64_t);
         entradas[i].buffer = malloc(sizeof(int64_t) * tam_bloque);
+        
+        if (!entradas[i].buffer) {
+            perror("Error al asignar memoria");
+            exit(1);
+        }
         entradas[i].pos = 0;
         entradas[i].bloque_actual = 0;
         entradas[i].activo = 1;
 
-        entradas[i].elementos_validos = fread(entradas[i].buffer, sizeof(int64_t), tam_bloque, entradas[i].f);
+        size_t cantidad = entradas[i].elementos_restantes >= tam_bloque ? tam_bloque : entradas[i].elementos_restantes;
+        leer_bloque(entradas[i].f, entradas[i].buffer, entradas[i].bloque_actual, cantidad);
+        entradas[i].elementos_validos = cantidad;
+        entradas[i].elementos_restantes -= cantidad;
+        entradas[i].bloque_actual++;
     }
 
     FILE *out = fopen(output_name, "wb");
     int64_t *out_buffer = malloc(sizeof(int64_t) * tam_bloque);
+    if (!out_buffer) {
+        perror("Error al asignar memoria");
+        exit(1);
+    }
     size_t out_pos = 0;
+    size_t bloques_escritos = 0;
 
+    // Mezcla
     while (1)
     {
         int min_idx = -1;
@@ -120,27 +144,35 @@ void mezclar_archivos(char **input_names, size_t count, const char *output_name)
 
         if (out_pos == tam_bloque)
         {
-            fwrite(out_buffer, sizeof(int64_t), out_pos, out);
+            escribir_bloque(out, out_buffer, bloques_escritos++, out_pos);
             out_pos = 0;
         }
 
         if (entradas[min_idx].pos == entradas[min_idx].elementos_validos)
         {
-            entradas[min_idx].elementos_validos = fread(entradas[min_idx].buffer, sizeof(int64_t), tam_bloque, entradas[min_idx].f);
-            entradas[min_idx].pos = 0;
-
-            if (entradas[min_idx].elementos_validos == 0)
+            if (entradas[min_idx].elementos_restantes > 0)
+            {
+                size_t cantidad = entradas[min_idx].elementos_restantes >= tam_bloque ? tam_bloque : entradas[min_idx].elementos_restantes;
+                leer_bloque(entradas[min_idx].f, entradas[min_idx].buffer, entradas[min_idx].bloque_actual, cantidad);
+                entradas[min_idx].elementos_validos = cantidad;
+                entradas[min_idx].elementos_restantes -= cantidad;
+                entradas[min_idx].pos = 0;
+                entradas[min_idx].bloque_actual++;
+            }
+            else
             {
                 entradas[min_idx].activo = 0;
             }
         }
     }
 
+    // Escribir los elementos restantes
     if (out_pos > 0)
     {
-        fwrite(out_buffer, sizeof(int64_t), out_pos, out);
+        escribir_bloque(out, out_buffer, bloques_escritos++, out_pos);
     }
 
+    // Liberación de recursos
     for (size_t i = 0; i < count; i++)
     {
         fclose(entradas[i].f);
@@ -150,6 +182,7 @@ void mezclar_archivos(char **input_names, size_t count, const char *output_name)
     free(out_buffer);
     free(entradas);
 }
+
 
 
 
