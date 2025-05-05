@@ -105,11 +105,18 @@ void mezclar_archivos(char **input_names, size_t count, const char *output_name)
         entradas[i].bloque_actual = 0;
         entradas[i].activo = 1;
 
+
         size_t cantidad = entradas[i].elementos_restantes >= tam_bloque ? tam_bloque : entradas[i].elementos_restantes;
         leer_bloque(entradas[i].f, entradas[i].buffer, entradas[i].bloque_actual, cantidad);
         entradas[i].elementos_validos = cantidad;
         entradas[i].elementos_restantes -= cantidad;
         entradas[i].bloque_actual++;
+
+        size_t leidos = fread(entradas[i].buffer, sizeof(int64_t), tam_bloque, entradas[i].f);
+        entradas[i].elementos_validos = leidos;
+        if (leidos == 0)
+            entradas[i].activo = 0;
+
     }
 
     FILE *out = fopen(output_name, "wb");
@@ -150,7 +157,12 @@ void mezclar_archivos(char **input_names, size_t count, const char *output_name)
 
         if (entradas[min_idx].pos == entradas[min_idx].elementos_validos)
         {
+
             if (entradas[min_idx].elementos_restantes > 0)
+
+            size_t leidos = fread(entradas[min_idx].buffer, sizeof(int64_t), tam_bloque, entradas[min_idx].f);
+            if (leidos == 0)
+
             {
                 size_t cantidad = entradas[min_idx].elementos_restantes >= tam_bloque ? tam_bloque : entradas[min_idx].elementos_restantes;
                 leer_bloque(entradas[min_idx].f, entradas[min_idx].buffer, entradas[min_idx].bloque_actual, cantidad);
@@ -192,7 +204,25 @@ void mezclar_runs(char **nombres_runs, size_t num_runs, size_t a, int nivel)
 {
     if (num_runs == 1)
     {
-        rename(nombres_runs[0], "entrada_tmp.bin");
+        printf("Nivel %d: archivo final a renombrar: %s\n", nivel, nombres_runs[0]);
+
+        // Verificamos que el archivo exista antes de renombrar
+        FILE *test = fopen(nombres_runs[0], "rb");
+        if (!test)
+        {
+            perror("No se puede abrir el archivo final");
+            exit(1);
+        }
+        fclose(test);
+
+        if (rename(nombres_runs[0], "entrada_tmp.bin") != 0)
+        {
+            perror("Fallo al renombrar archivo final");
+            exit(1);
+        }
+
+        free(nombres_runs[0]);
+        free(nombres_runs);
         return;
     }
 
@@ -206,12 +236,15 @@ void mezclar_runs(char **nombres_runs, size_t num_runs, size_t a, int nivel)
         if (fin > num_runs)
             fin = num_runs;
 
+        printf("Nivel %d: mezclando archivos del %zu al %zu\n", nivel, inicio, fin);
+
         char nombre_out[32];
         snprintf(nombre_out, 32, "run_nivel%d_%zu.bin", nivel, i);
         nuevos_nombres[i] = strdup(nombre_out);
 
         mezclar_archivos(&nombres_runs[inicio], fin - inicio, nombre_out);
 
+        // Libero los nombres y borro los archivos solo después de mezclarlos
         for (size_t j = inicio; j < fin; j++)
         {
             remove(nombres_runs[j]);
@@ -221,8 +254,10 @@ void mezclar_runs(char **nombres_runs, size_t num_runs, size_t a, int nivel)
 
     free(nombres_runs);
 
+    // Llamada recursiva con los nuevos runs generados
     mezclar_runs(nuevos_nombres, nuevos_runs, a, nivel + 1);
 
+    // Libero los nombres generados en este nivel (después de la recursión)
     for (size_t i = 0; i < nuevos_runs; i++)
     {
         free(nuevos_nombres[i]);
