@@ -179,7 +179,7 @@ void mezclar_runs(std::vector<std::string> &nombres_runs, size_t a, int nivel)
     mezclar_runs(nuevos_nombres, a, nivel + 1);
 }
 
-void mergesort_externo(const std::string &nombre_archivo, size_t M, size_t a)
+void mergesort_externo(const std::string &nombre_archivo, size_t a)
 {
     std::ifstream entrada(nombre_archivo, std::ios::binary);
     if (!entrada)
