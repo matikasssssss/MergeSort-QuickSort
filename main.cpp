@@ -40,7 +40,7 @@ void verificar_orden(const std::string &nombre_archivo)
 
 int main()
 {
-    size_t size_in_mb = 60 * 50;
+    size_t size_in_mb = 8 * 50;
     generate_binary_file("entrada.bin", size_in_mb);
 
     cont_lecturas = 0;
