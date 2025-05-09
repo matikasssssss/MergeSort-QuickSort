@@ -112,7 +112,7 @@ void quicksort_externo(const std::string &archivo, size_t M, size_t a, int nivel
     {
         if (!buffers_tmp[i].empty())
         {
-            salidas[i].write(reinterpret_cast<char *>(buffers_tmp[i].data()), buffers_tmp[i].size() * sizeof(int64_t));
+            escribir_bloque(salidas[i], buffers_tmp[i].data(), -1, buffers_tmp[i].size());
             cont_escrituras++;
             buffers_tmp[i].clear();
         }

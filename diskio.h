@@ -5,8 +5,7 @@
 #include <fstream>
 
 #define BLOCK_SIZE 4096
-#define ELEMENT_SIZE sizeof(int64_t)
-#define ELEMENTS_PER_BLOCK (BLOCK_SIZE / ELEMENT_SIZE)
+#define ELEMENTS_PER_BLOCK (BLOCK_SIZE / sizeof(int64_t))
 
 // Declaración de funciones para leer y escribir bloques en archivos
 void leer_bloque(std::ifstream &f, int64_t *buffer, size_t bloque, size_t cantidad_elementos);
