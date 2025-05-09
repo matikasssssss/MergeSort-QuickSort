@@ -1,3 +1,15 @@
+#include "diskio.h"
+#include "quicksort.h"
+
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <random>
+#include <cstdlib> // exit()
+#include <cstdio>  // remove()
+
 void quicksort_externo(const std::string &archivo, size_t M, size_t a, int nivel)
 {
     std::ifstream entrada(archivo, std::ios::binary);
