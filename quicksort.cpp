@@ -1,12 +1,3 @@
-#include "diskio.h"
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <algorithm>
-#include <random>
-#include "quicksort.h"
-
 void quicksort_externo(const std::string &archivo, size_t M, size_t a, int nivel)
 {
     std::ifstream entrada(archivo, std::ios::binary);
@@ -23,12 +14,10 @@ void quicksort_externo(const std::string &archivo, size_t M, size_t a, int nivel
 
     size_t max_en_memoria = M / sizeof(int64_t);
 
-    // Caso base: si el archivo cabe en memoria
     if (total_elementos <= max_en_memoria)
     {
         std::vector<int64_t> buffer(total_elementos);
-
-        entrada.read(reinterpret_cast<char *>(buffer.data()), tam_archivo); // Leer todo el archivo
+        entrada.read(reinterpret_cast<char *>(buffer.data()), tam_archivo);
         if (!entrada)
         {
             std::cerr << "Error leyendo el archivo.\n";
@@ -36,20 +25,19 @@ void quicksort_externo(const std::string &archivo, size_t M, size_t a, int nivel
         }
 
         std::sort(buffer.begin(), buffer.end());
-
         entrada.close();
+
         std::ofstream salida(archivo, std::ios::binary);
-        salida.write(reinterpret_cast<const char *>(buffer.data()), tam_archivo); // Escribir archivo ordenado
+        salida.write(reinterpret_cast<const char *>(buffer.data()), tam_archivo);
         if (!salida)
         {
             std::cerr << "Error escribiendo el archivo.\n";
             exit(1);
         }
-
         return;
     }
 
-    // Leer una muestra aleatoria para determinar pivotes
+    // Selección de pivotes
     std::vector<int64_t> muestra(ELEMENTS_PER_BLOCK);
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -57,14 +45,13 @@ void quicksort_externo(const std::string &archivo, size_t M, size_t a, int nivel
     size_t bloque_aleatorio = dis(gen);
     leer_bloque(entrada, muestra.data(), bloque_aleatorio, ELEMENTS_PER_BLOCK);
 
-    // Seleccionar a-1 pivotes
     std::shuffle(muestra.begin(), muestra.end(), gen);
     std::vector<int64_t> pivotes(muestra.begin(), muestra.begin() + a - 1);
     std::sort(pivotes.begin(), pivotes.end());
 
-    entrada.seekg(0); // Volver al principio para particionar
+    entrada.seekg(0);
 
-    // Crear archivos de salida
+    // Archivos de salida por partición
     std::vector<std::ofstream> salidas(a);
     std::vector<std::string> nombres_partes(a);
     for (size_t i = 0; i < a; ++i)
@@ -78,10 +65,12 @@ void quicksort_externo(const std::string &archivo, size_t M, size_t a, int nivel
         }
     }
 
-    // Leer y particionar los datos
-    std::vector<int64_t> buffer(ELEMENTS_PER_BLOCK);
-    std::vector<std::vector<int64_t>> buffers_por_particion(a); // búferes temporales
+    // Buffers por partición con flushing a disco
+    std::vector<std::vector<int64_t>> buffers_tmp(a);
+    for (size_t i = 0; i < a; ++i)
+        buffers_tmp[i].reserve(ELEMENTS_PER_BLOCK);
 
+    std::vector<int64_t> buffer(ELEMENTS_PER_BLOCK);
     size_t bloques = (total_elementos + ELEMENTS_PER_BLOCK - 1) / ELEMENTS_PER_BLOCK;
 
     for (size_t i = 0; i < bloques; ++i)
@@ -93,42 +82,36 @@ void quicksort_externo(const std::string &archivo, size_t M, size_t a, int nivel
         {
             int64_t x = buffer[j];
             size_t idx = std::lower_bound(pivotes.begin(), pivotes.end(), x) - pivotes.begin();
-            buffers_por_particion[idx].push_back(x);
+            buffers_tmp[idx].push_back(x);
+
+            if (buffers_tmp[idx].size() == ELEMENTS_PER_BLOCK)
+            {
+                salidas[idx].write(reinterpret_cast<char *>(buffers_tmp[idx].data()), ELEMENTS_PER_BLOCK * sizeof(int64_t));
+                cont_escrituras++;
+                buffers_tmp[idx].clear();
+            }
         }
     }
 
     entrada.close();
 
-    // Ahora escribir por partición en bloques
+    // Vaciar buffers restantes
     for (size_t i = 0; i < a; ++i)
     {
-        size_t total = buffers_por_particion[i].size();
-        size_t escritos = 0;
-
-        while (escritos < total)
+        if (!buffers_tmp[i].empty())
         {
-            size_t cantidad = std::min(ELEMENTS_PER_BLOCK, total - escritos);
-            salidas[i].write(reinterpret_cast<char *>(&buffers_por_particion[i][escritos]), cantidad * sizeof(int64_t));
-            escritos += cantidad;
-            cont_escrituras++; // ahora sí es por bloque
+            salidas[i].write(reinterpret_cast<char *>(buffers_tmp[i].data()), buffers_tmp[i].size() * sizeof(int64_t));
+            cont_escrituras++;
+            buffers_tmp[i].clear();
         }
-
         salidas[i].close();
     }
 
-    entrada.close();
-    for (auto &f : salidas)
-    {
-        f.close();
-    }
-
-    // Recursión para ordenar las particiones
+    // Ordenar recursivamente
     for (size_t i = 0; i < a; ++i)
-    {
         quicksort_externo(nombres_partes[i], M, a, nivel + 1);
-    }
 
-    // Concatenar archivos
+    // Concatenar particiones
     std::ofstream salida_final(archivo, std::ios::binary);
     std::vector<int64_t> out_buffer(ELEMENTS_PER_BLOCK);
 
@@ -141,15 +124,14 @@ void quicksort_externo(const std::string &archivo, size_t M, size_t a, int nivel
         in.seekg(0);
 
         size_t bloques_leer = (elementos + ELEMENTS_PER_BLOCK - 1) / ELEMENTS_PER_BLOCK;
-
         for (size_t j = 0; j < bloques_leer; ++j)
         {
             size_t cantidad = std::min(ELEMENTS_PER_BLOCK, elementos - j * ELEMENTS_PER_BLOCK);
             leer_bloque(in, out_buffer.data(), j, cantidad);
-            escribir_bloque(salida_final, out_buffer.data(), -1, cantidad); // Ignorar bloque físico, escribir secuencial
+            escribir_bloque(salida_final, out_buffer.data(), -1, cantidad);
         }
 
         in.close();
-        std::remove(nombres_partes[i].c_str()); // Limpiar archivos temporales
+        std::remove(nombres_partes[i].c_str());
     }
 }

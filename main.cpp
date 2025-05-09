@@ -35,9 +35,9 @@ bool verificar_orden(const string &filename)
 int main()
 {
     const string filename = "datos.bin";
-    const size_t size_in_mb = 8 * 50; // Tamaño del archivo en MB
-    const size_t M = 8 * 1024 * 1024; // Memoria máxima en bytes (ej: 8 MB)
-    const size_t a = 172;             // Número de particiones (pivotes)
+    const size_t size_in_mb = 60 * 50; // Tamaño del archivo en MB
+    const size_t M = 50 * 1024 * 1024; // Memoria máxima en bytes (ej: 8 MB)
+    const size_t a = 172;              // Número de particiones (pivotes)
 
     cout << "Generando archivo binario...\n";
     generate_binary_file(filename, size_in_mb);
