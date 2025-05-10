@@ -3,7 +3,10 @@
         "stdlib.h": "c",
         "diskio.h": "c",
         "cstddef": "cpp",
-        "iosfwd": "cpp"
+        "iosfwd": "cpp",
+        "chrono": "cpp",
+        "iostream": "cpp",
+        "ostream": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

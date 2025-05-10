@@ -16,7 +16,7 @@ using namespace std;
 size_t ejecutar_con_a(const string &archivo, size_t a)
 {
     ifstream in(archivo, ios::binary);
-    ofstream out(ARCHIVO_COPIA, ios::binary);
+    ofstream out("entrada_tmp.bin", ios::binary);
 
     if (!in || !out)
     {
@@ -24,6 +24,7 @@ size_t ejecutar_con_a(const string &archivo, size_t a)
         return numeric_limits<size_t>::max();
     }
 
+    // Copia el archivo original al temporal
     vector<int64_t> buffer(ELEMENTS_PER_BLOCK);
     while (in.read(reinterpret_cast<char *>(buffer.data()), ELEMENTS_PER_BLOCK * sizeof(int64_t)) || in.gcount() > 0)
     {
@@ -33,10 +34,19 @@ size_t ejecutar_con_a(const string &archivo, size_t a)
     in.close();
     out.close();
 
+    // Reinicia contadores
     cont_lecturas = 0;
     cont_escrituras = 0;
 
-    mergesort_externo(ARCHIVO_COPIA, a);
+    // Mensaje antes de ejecutar
+    cout << "  > Probando a = " << a << "..." << flush;
+
+    mergesort_externo("entrada_tmp.bin", a);
+
+    // Mostrar resultados
+    cout << " Lecturas: " << cont_lecturas
+         << ", Escrituras: " << cont_escrituras
+         << " (Total I/Os: " << cont_lecturas + cont_escrituras << ")" << endl;
 
     return cont_lecturas + cont_escrituras;
 }
@@ -79,7 +89,7 @@ size_t buscar_a_optimo(const string &archivo, size_t B)
 
     for (size_t a = l; a <= r; ++a)
     {
-        size_t ios = ejecutar_con_a(archivo, BLOCK_SIZE, a);
+        size_t ios = ejecutar_con_a(archivo, a);
         if (ios < min_ios)
         {
             min_ios = ios;

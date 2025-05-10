@@ -51,9 +51,9 @@ int main()
     const string archivo_merge = "merge_input.bin";
     const string archivo_quick = "quick_input.bin";
 
-    const size_t size_in_mb = 10 * 50;
+    const size_t size_in_mb = 4 * 50;
     const size_t M = 50 * 1024 * 1024; // Memoria disponible en bytes (8 MB)
-    const size_t a = 342;              // Aridad / cantidad de particiones
+    const size_t a = 400;              // Aridad / cantidad de particiones
 
     cout << " Generando archivo binario original...\n";
     generate_binary_file(archivo_original, size_in_mb);
