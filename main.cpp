@@ -51,9 +51,9 @@ int main()
     const string archivo_merge = "merge_input.bin";
     const string archivo_quick = "quick_input.bin";
 
-    const size_t size_in_mb = 20 * 50; // 400 MB
+    const size_t size_in_mb = 10 * 50;
     const size_t M = 50 * 1024 * 1024; // Memoria disponible en bytes (8 MB)
-    const size_t a = 172;              // Aridad / cantidad de particiones
+    const size_t a = 342;              // Aridad / cantidad de particiones
 
     cout << " Generando archivo binario original...\n";
     generate_binary_file(archivo_original, size_in_mb);
@@ -77,6 +77,11 @@ int main()
     cout << " Verificando orden Mergesort...\n";
     bool orden_merge = verificar_orden("entrada_tmp.bin"); // output final mergesort
 
+    // Eliminar archivo temporal de salida de mergesort
+    remove("entrada_tmp.bin");
+    // Eliminar copia de entrada usada por mergesort
+    remove(archivo_merge.c_str());
+
     // ======================== QUICKSORT ========================
     cout << "\n Ejecutando Quicksort Externo...\n";
     cont_lecturas = 0;
@@ -92,6 +97,9 @@ int main()
     cout << " Verificando orden Quicksort...\n";
     bool orden_quick = verificar_orden(archivo_quick);
 
+    // Eliminar archivo quick_input.bin
+    remove(archivo_quick.c_str());
+    remove(archivo_original.c_str());
     // ======================== RESULTADOS ========================
     cout << "\n==================  RESULTADOS ==================\n";
     cout << "Archivo generado: " << size_in_mb << " MB (" << size_in_mb * 1024 * 1024 / sizeof(int64_t) << " elementos)\n";
