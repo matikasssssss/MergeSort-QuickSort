@@ -13,7 +13,7 @@
 
 using namespace std;
 
-size_t ejecutar_con_a(const string &archivo, size_t M, size_t a)
+size_t ejecutar_con_a(const string &archivo, size_t a)
 {
     ifstream in(archivo, ios::binary);
     ofstream out(ARCHIVO_COPIA, ios::binary);
@@ -36,7 +36,7 @@ size_t ejecutar_con_a(const string &archivo, size_t M, size_t a)
     cont_lecturas = 0;
     cont_escrituras = 0;
 
-    mergesort_externo(ARCHIVO_COPIA, M, a);
+    mergesort_externo(ARCHIVO_COPIA, a);
 
     return cont_lecturas + cont_escrituras;
 }
@@ -54,8 +54,8 @@ size_t buscar_a_optimo(const string &archivo, size_t B)
         size_t m1 = l + (r - l) / 3;
         size_t m2 = r - (r - l) / 3;
 
-        size_t io1 = ejecutar_con_a(archivo, BLOCK_SIZE, m1);
-        size_t io2 = ejecutar_con_a(archivo, BLOCK_SIZE, m2);
+        size_t io1 = ejecutar_con_a(archivo, m1);
+        size_t io2 = ejecutar_con_a(archivo, m2);
 
         if (io1 < io2)
         {

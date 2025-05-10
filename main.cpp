@@ -1,12 +1,16 @@
 #include <iostream>
+#include <fstream>
 #include <string>
-#include "utils.h"     // Contiene generate_binary_file
-#include "quicksort.h" // Debe usar leer_bloque y escribir_bloque internamente
-#include "diskio.h"    // Contiene cont_lecturas y cont_escrituras
+#include <chrono>
+#include <cstdio>
+#include "utils.h"     // generate_binary_file
+#include "quicksort.h" // quicksort_externo
+#include "mergesort.h" // mergesort_externo
+#include "diskio.h"    // cont_lecturas, cont_escrituras
 
 using namespace std;
 
-// Verificar si el archivo está ordenado
+// Verifica si un archivo binario está ordenado
 bool verificar_orden(const string &filename)
 {
     ifstream entrada(filename, ios::binary);
@@ -17,7 +21,8 @@ bool verificar_orden(const string &filename)
     }
 
     int64_t prev, curr;
-    entrada.read(reinterpret_cast<char *>(&prev), sizeof(int64_t));
+    if (!entrada.read(reinterpret_cast<char *>(&prev), sizeof(int64_t)))
+        return true; // Archivo vacío o con 1 elemento
 
     while (entrada.read(reinterpret_cast<char *>(&curr), sizeof(int64_t)))
     {
@@ -32,33 +37,78 @@ bool verificar_orden(const string &filename)
     return true;
 }
 
+// Copia binaria entre archivos
+void copiar_archivo(const string &origen, const string &destino)
+{
+    ifstream src(origen, ios::binary);
+    ofstream dst(destino, ios::binary);
+    dst << src.rdbuf();
+}
+
 int main()
 {
-    const string filename = "datos.bin";
-    const size_t size_in_mb = 8 * 50; // Tamaño del archivo en MB
-    const size_t M = 8 * 1024 * 1024; // Memoria máxima en bytes (ej: 8 MB)
-    const size_t a = 172;             // Número de particiones (pivotes)
+    const string archivo_original = "original.bin";
+    const string archivo_merge = "merge_input.bin";
+    const string archivo_quick = "quick_input.bin";
 
-    cout << "Generando archivo binario...\n";
-    generate_binary_file(filename, size_in_mb);
+    const size_t size_in_mb = 20 * 50; // 400 MB
+    const size_t M = 50 * 1024 * 1024; // Memoria disponible en bytes (8 MB)
+    const size_t a = 172;              // Aridad / cantidad de particiones
 
-    cout << "Ordenando archivo...\n";
-    quicksort_externo(filename, M, a, 0); // Usa internamente leer_bloque y escribir_bloque
+    cout << " Generando archivo binario original...\n";
+    generate_binary_file(archivo_original, size_in_mb);
 
-    cout << "Verificando orden...\n";
-    if (verificar_orden(filename))
-    {
-        cout << "Archivo ordenado correctamente.\n";
-    }
-    else
-    {
-        cout << "Archivo no está ordenado.\n";
-    }
+    cout << " Copiando archivo para Mergesort y Quicksort...\n";
+    copiar_archivo(archivo_original, archivo_merge);
+    copiar_archivo(archivo_original, archivo_quick);
 
-    // Mostrar estadísticas
-    cout << "\n📊 Estadísticas de E/S:\n";
-    cout << "Lecturas realizadas: " << cont_lecturas << '\n';
-    cout << "Escrituras realizadas: " << cont_escrituras << '\n';
+    // ======================== MERGESORT ========================
+    cout << "\n Ejecutando Mergesort Externo...\n";
+    cont_lecturas = 0;
+    cont_escrituras = 0;
+    auto inicio_merge = chrono::high_resolution_clock::now();
+    mergesort_externo(archivo_merge, a);
+    auto fin_merge = chrono::high_resolution_clock::now();
+
+    double tiempo_merge = chrono::duration<double>(fin_merge - inicio_merge).count();
+    size_t lecturas_merge = cont_lecturas;
+    size_t escrituras_merge = cont_escrituras;
+
+    cout << " Verificando orden Mergesort...\n";
+    bool orden_merge = verificar_orden("entrada_tmp.bin"); // output final mergesort
+
+    // ======================== QUICKSORT ========================
+    cout << "\n Ejecutando Quicksort Externo...\n";
+    cont_lecturas = 0;
+    cont_escrituras = 0;
+    auto inicio_quick = chrono::high_resolution_clock::now();
+    quicksort_externo(archivo_quick, M, a, 0);
+    auto fin_quick = chrono::high_resolution_clock::now();
+
+    double tiempo_quick = chrono::duration<double>(fin_quick - inicio_quick).count();
+    size_t lecturas_quick = cont_lecturas;
+    size_t escrituras_quick = cont_escrituras;
+
+    cout << " Verificando orden Quicksort...\n";
+    bool orden_quick = verificar_orden(archivo_quick);
+
+    // ======================== RESULTADOS ========================
+    cout << "\n==================  RESULTADOS ==================\n";
+    cout << "Archivo generado: " << size_in_mb << " MB (" << size_in_mb * 1024 * 1024 / sizeof(int64_t) << " elementos)\n";
+    cout << "Memoria M: " << M / (1024 * 1024) << " MB\n";
+    cout << "Aridad a: " << a << "\n\n";
+
+    cout << "MERGESORT EXTERNO\n";
+    cout << "Tiempo: " << tiempo_merge << " segundos\n";
+    cout << "Lecturas: " << lecturas_merge << "\n";
+    cout << "Escrituras: " << escrituras_merge << "\n";
+    cout << "Orden correcto: " << (orden_merge ? "Si" : "No") << "\n\n";
+
+    cout << "QUICKSORT EXTERNO\n";
+    cout << "Tiempo: " << tiempo_quick << " segundos\n";
+    cout << "Lecturas: " << lecturas_quick << "\n";
+    cout << "Escrituras: " << escrituras_quick << "\n";
+    cout << "Orden correcto: " << (orden_quick ? "Si" : "No") << "\n";
 
     return 0;
 }
