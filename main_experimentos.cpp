@@ -82,9 +82,9 @@ void copiar_archivo(const string &origen, const string &destino)
 int main()
 {
     const size_t archivos = 5;
-    const size_t size_in_mb = 4 * 50;
+    const size_t size_in_mb = 60 * 50;
     const size_t M = 50 * 1024 * 1024;
-    const size_t a = 60;
+    const size_t a = 257;
 
     ofstream resultados("resultados.txt");
 
