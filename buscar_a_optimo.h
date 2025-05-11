@@ -4,11 +4,34 @@
 #include <string>
 #include <cstddef>
 
-// Ejecuta mergesort_externo sobre una copia del archivo y devuelve la suma de lecturas + escrituras
-size_t ejecutar_con_a(const std::string &archivo, size_t a);
+using namespace std;
 
-// Realiza búsqueda ternaria sobre el valor de a que minimiza lecturas + escrituras
-// B es el tamaño de bloque en bytes (BLOCK_SIZE), usado para limitar el rango superior de a
-size_t buscar_a_optimo(const std::string &archivo, size_t B);
+/**
+ * @brief Ejecuta Mergesort Externo sobre una copia del archivo con una aridad dada.
+ *
+ * La función realiza una copia del archivo original a un archivo temporal,
+ * ejecuta `mergesort_externo()` con el valor de aridad `a` y devuelve la
+ * cantidad total de accesos a disco (lecturas + escrituras).
+ *
+ * @param archivo Nombre del archivo binario original (no se modifica).
+ * @param a Valor de aridad a utilizar en el algoritmo.
+ *
+ * @return Cantidad total de accesos a disco realizados durante la ejecución.
+ *         Devuelve `std::numeric_limits<size_t>::max()` en caso de error de lectura o escritura.
+ */
+size_t ejecutar_con_a(const string &archivo, size_t a);
+
+/**
+ * @brief Busca el valor óptimo de aridad `a` que minimiza la suma de lecturas y escrituras al disco.
+ *
+ * Realiza una búsqueda ternaria sobre el rango [2, 512] (o definido por `B`) para encontrar
+ * la aridad que produce el menor número de I/Os durante la ejecución de `mergesort_externo()`.
+ *
+ * @param archivo Nombre del archivo binario sobre el cual se realiza la prueba.
+ * @param B Tamaño del bloque en bytes. Se usa para estimar el límite superior de la aridad.
+ *
+ * @return Valor óptimo de `a` que minimiza el número total de accesos a disco.
+ */
+size_t buscar_a_optimo(const string &archivo, size_t B);
 
 #endif // BUSCAR_A_OPTIMO_H

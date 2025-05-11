@@ -4,6 +4,8 @@
 #include <string>
 #include <cstddef>
 
+using namespace std;
+
 /**
  * @brief Ordena un archivo binario de enteros de 64 bits usando Quicksort externo.
  *
@@ -15,6 +17,6 @@
  * @param a Aridad: cantidad de particiones a realizar en cada paso recursivo.
  * @param nivel Nivel actual de recursión (por defecto es 0, útil para generar nombres únicos de archivos temporales).
  */
-void quicksort_externo(const std::string &archivo, size_t M, size_t a, int nivel = 0);
+void quicksort_externo(const string &archivo, size_t M, size_t a, int nivel = 0);
 
 #endif // QUICKSORT_H
