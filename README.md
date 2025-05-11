@@ -5,7 +5,7 @@
 **Profesores**: Benjamín Bustos, Gonzalo Navarro  
 **Auxiliares**: Sergio Rojas, Pablo Skewes
 
-## 📄 Descripción
+## Descripción
 
 Este proyecto implementa y compara dos algoritmos de ordenamiento para memoria externa:
 
@@ -14,7 +14,7 @@ Este proyecto implementa y compara dos algoritmos de ordenamiento para memoria e
 
 El objetivo es medir el desempeño de ambos algoritmos en términos de tiempo de ejecución y accesos a disco (lecturas y escrituras), siguiendo las metodologías señaladas en la tarea.
 
-## 📁 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 .
@@ -28,13 +28,13 @@ El objetivo es medir el desempeño de ambos algoritmos en términos de tiempo de
 ├── resultados.txt         # Archivo generado con los resultados de los experimentos
 ```
 
-## 🧪 Requisitos
+## Requisitos
 
 - Compilador C++17 o superior.
 - Docker (opcional pero recomendado para validación bajo límites de memoria).
 - No se utilizan librerías externas. Solo `C++ STL`.
 
-## ⚙️ Compilación
+## Compilación
 
 Para compilar el proyecto:
 
@@ -72,7 +72,7 @@ Este comando:
 - Verifica si el resultado está ordenado.
 - Registra todo en consola y en el archivo `resultados.txt`.
 
-## 📊 Resultados
+## Resultados
 
 Los resultados incluyen:
 
@@ -81,7 +81,7 @@ Los resultados incluyen:
 - Verificación de orden final.
 - Están disponibles en `resultados.txt`.
 
-## 🐳 Ejecución en Docker (opcional)
+## Ejecución en Docker (opcional)
 
 Para correr en entorno controlado (memoria limitada a 50MB):
 
@@ -99,7 +99,7 @@ make
 ./experimento
 ```
 
-## 🧼 Limpieza
+## Limpieza
 
 Para eliminar archivos temporales:
 
@@ -107,7 +107,7 @@ Para eliminar archivos temporales:
 rm *.bin resultados.txt buscar_a experimento
 ```
 
-## ✍️ Créditos
+## Créditos
 
 Implementado por Roberto Vega, Gaspar Robledo y Matías Farías, ambientado en la Tarea 1 del curso CC4102.  
 Todos los algoritmos fueron desarrollados desde cero, sin el uso de librerías externas de ordenamiento para su correcto análisis y experimentación.
